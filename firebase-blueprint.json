@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user profile.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "createdAt": { "type": "number", "description": "Timestamp" }
+      },
+      "required": ["createdAt"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Admin presence indicator.",
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "number" },
+        "username": { "type": "string" }
+      },
+      "required": ["createdAt", "username"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "A product available for sale.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["name", "description", "price", "createdAt"]
+    },
+    "CartItem": {
+      "title": "CartItem",
+      "description": "An item in the user's cart.",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "quantity": { "type": "number" },
+        "addedAt": { "type": "number" }
+      },
+      "required": ["productId", "quantity", "addedAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A user's order.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "items": { "type": "array", "description": "List of cart items with product info" },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "shipped", "delivered", "cancelled"] },
+        "paymentMethod": { "type": "string", "enum": ["bkash", "nagad", "rocket"] },
+        "paymentNumber": { "type": "string" },
+        "trxId": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["userId", "items", "totalAmount", "status", "paymentMethod", "trxId", "createdAt"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Payment records verified by admin.",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string" },
+        "trxId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "verified", "rejected"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["orderId", "trxId", "amount", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "admins/{userId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Admin privileges. Only admins can create/edit products."
+    },
+    "products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Product catalog"
+    },
+    "carts/{userId}/items/{itemId}": {
+      "schema": { "$ref": "#/entities/CartItem" },
+      "description": "User specific carts. Using a subcollection of carts to comply with Firebase list constraints."
+    },
+    "orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Orders placed by users"
+    },
+    "payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Payments logged for orders"
+    }
+  }
+}

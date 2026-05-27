@@ -1,0 +1,91 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global lock
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isAdmin() { 
+      return isSignedIn() && (request.auth.token.email == 'unofficial_sajid@admin.com' || request.auth.token.email == 'sajid_dev@admin.com' || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function existing() { return resource.data; }
+    function incoming() { return request.resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // Validation Blueprints
+    function isValidUser(data) {
+      return data.keys().hasAll(['createdAt']) &&
+             data.createdAt is number;
+    }
+    
+    function isValidProduct(data) {
+      return data.keys().hasAll(['name', 'description', 'price', 'createdAt']) &&
+             data.name is string && data.name.size() <= 200 &&
+             data.description is string && data.description.size() <= 5000 &&
+             data.price is number &&
+             data.createdAt is number;
+    }
+
+    function isValidCartItem(data) {
+      return data.keys().hasAll(['productId', 'quantity', 'addedAt']) &&
+             data.productId is string && data.productId.size() <= 128 &&
+             data.quantity is number &&
+             data.addedAt is number;
+    }
+    
+    function isValidOrder(data) {
+      return data.keys().hasAll(['userId', 'items', 'totalAmount', 'status', 'paymentMethod', 'paymentNumber', 'trxId', 'createdAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.items is list && data.items.size() <= 50 &&
+             data.totalAmount is number &&
+             data.status is string && data.status.size() <= 20 &&
+             data.paymentMethod is string && data.paymentMethod.size() <= 20 &&
+             data.paymentNumber is string && data.paymentNumber.size() <= 20 &&
+             data.trxId is string && data.trxId.size() <= 50 &&
+             data.createdAt is number;
+    }
+    
+    function isValidPayment(data) {
+      return data.keys().hasAll(['orderId', 'trxId', 'amount', 'status', 'createdAt']) &&
+             data.orderId is string && data.orderId.size() <= 128 &&
+             data.trxId is string && data.trxId.size() <= 50 &&
+             data.amount is number &&
+             data.status is string && data.status.size() <= 20 &&
+             data.createdAt is number;
+    }
+
+    // Collections
+    
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    
+    match /admins/{userId} {
+      allow read, write: if true;
+    }
+    
+    match /products/{productId} {
+      allow read, write: if true;
+    }
+    
+    match /carts/{userId} {
+      allow read, write: if true;
+      
+      match /items/{itemId} {
+        allow read, write: if true;
+      }
+    }
+    
+    match /orders/{orderId} {
+      allow read, write: if true;
+    }
+    
+    match /payments/{paymentId} {
+      allow read, write: if true;
+    }
+  }
+}
